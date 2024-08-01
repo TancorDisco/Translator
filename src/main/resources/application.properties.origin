@@ -1,0 +1,4 @@
+spring.application.name=Translator
+
+yandex.translate.api-key=
+yandex.translate.folder-id=
