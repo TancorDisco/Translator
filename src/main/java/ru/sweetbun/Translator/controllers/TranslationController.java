@@ -1,5 +1,6 @@
 package ru.sweetbun.Translator.controllers;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,7 +27,7 @@ public class TranslationController {
 
     @ResponseBody
     @PostMapping("/translate")
-    public String translate(@ModelAttribute("translation") TranslationDTO translationDTO) {
-        return translationService.translate(translationDTO);
+    public String translate(@ModelAttribute("translation") TranslationDTO translationDTO, HttpServletRequest request) {
+        return translationService.translate(translationDTO, request);
     }
 }

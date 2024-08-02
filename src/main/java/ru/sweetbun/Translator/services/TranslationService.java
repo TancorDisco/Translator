@@ -3,12 +3,15 @@ package ru.sweetbun.Translator.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import ru.sweetbun.Translator.dao.TranslationRequestDAO;
 import ru.sweetbun.Translator.dto.TranslationDTO;
+import ru.sweetbun.Translator.dto.TranslationRequestDTO;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,13 +25,15 @@ public class TranslationService {
     @Value("${yandex.translate.api-key}")
     private String apiKey;
     private final RestTemplate restTemplate;
+    private final TranslationRequestDAO translationRequestDAO;
 
     @Autowired
-    public TranslationService(RestTemplate restTemplate) {
+    public TranslationService(RestTemplate restTemplate, TranslationRequestDAO translationRequestDAO) {
         this.restTemplate = restTemplate;
+        this.translationRequestDAO = translationRequestDAO;
     }
 
-    public String translate(TranslationDTO translationDTO) {
+    public String translate(TranslationDTO translationDTO, HttpServletRequest request) {
         ExecutorService executorService = Executors.newFixedThreadPool(10);
 
         Pattern pattern = Pattern.compile("[\\w']+|[.,!?;]");
@@ -68,7 +73,11 @@ public class TranslationService {
         }
         executorService.shutdown();
 
-        return translatedText.toString().trim();
+        String finalTranslatedText = translatedText.toString().trim();
+        String ipAddress = request.getRemoteAddr();
+        translationRequestDAO.save(new TranslationRequestDTO(ipAddress, translationDTO.getTexts(), finalTranslatedText));
+
+        return finalTranslatedText;
     }
 
     private boolean isPunctuation(String token) {

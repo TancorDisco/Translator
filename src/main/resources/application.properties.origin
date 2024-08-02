@@ -2,3 +2,8 @@ spring.application.name=Translator
 
 yandex.translate.api-key=
 yandex.translate.folder-id=
+
+spring.datasource.url=
+spring.datasource.username=
+spring.datasource.password=
+spring.datasource.driver-class-name=
