@@ -22,10 +22,16 @@ import java.util.regex.Pattern;
 @Service
 public class TranslationService {
 
+    private static final int MAX_WORDS = 100;
+    private static final int REQUEST_LIMIT_PER_SECOND = 20;
+    private static final int SLEEP_TIME_MS = 1100;
     @Value("${yandex.translate.api-key}")
     private String apiKey;
     private final RestTemplate restTemplate;
     private final TranslationRequestDAO translationRequestDAO;
+    private final Semaphore semaphore = new Semaphore(REQUEST_LIMIT_PER_SECOND);
+    private final Object rateLimitLock = new Object();
+    private int requestCount = 0;
 
     @Autowired
     public TranslationService(RestTemplate restTemplate, TranslationRequestDAO translationRequestDAO) {
@@ -36,19 +42,41 @@ public class TranslationService {
     public String translate(TranslationDTO translationDTO, HttpServletRequest request) {
         ExecutorService executorService = Executors.newFixedThreadPool(10);
 
-        Pattern pattern = Pattern.compile("[\\w']+|[.,!?;]");
+        Pattern pattern = Pattern.compile("[\\p{L}\\p{M}']+|[.,!?;]");
         Matcher matcher = pattern.matcher(translationDTO.getTexts());
 
         List<String> tokens = new ArrayList<>();
         List<Future<String>> futures = new ArrayList<>();
+        int wordCount = 0;
 
         while (matcher.find()) {
-            tokens.add(matcher.group());
+            String token = matcher.group();
+            tokens.add(token);
+            if (token.matches("[\\p{L}\\p{M}']+")) wordCount++;
         }
 
-        for (String token : tokens) {
-            if (token.matches("[\\w']+")) {
-                Callable<String> task = () -> translateWord(token, translationDTO);
+        if (wordCount > MAX_WORDS) {
+            throw new IllegalArgumentException("The text contains more than " + MAX_WORDS + " words!");
+        }
+
+        for (int i = 0; i < tokens.size(); i++) {
+            String token = tokens.get(i);
+            if (token.matches("[\\p{L}\\p{M}']+")) {
+                Callable<String> task = () -> {
+                    semaphore.acquire();
+                    try {
+                        synchronized (rateLimitLock) {
+                            if (requestCount >= REQUEST_LIMIT_PER_SECOND) {
+                                Thread.sleep(SLEEP_TIME_MS);
+                                requestCount = 0;
+                            }
+                            requestCount++;
+                        }
+                        return translateWord(token, translationDTO);
+                    } finally {
+                        semaphore.release();
+                    }
+                };
                 futures.add(executorService.submit(task));
             } else {
                 futures.add(CompletableFuture.completedFuture(token));
@@ -101,7 +129,6 @@ public class TranslationService {
         ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
 
         if (response.getStatusCode() == HttpStatus.OK) {
-            System.out.println(response.getBody());
             return extractTranslateWord(response.getBody());
         } else {
             throw new RuntimeException("Failed to translate, status: " + response.getStatusCode());
