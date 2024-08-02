@@ -13,6 +13,8 @@ import ru.sweetbun.Translator.dto.TranslationDTO;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class TranslationService {
@@ -29,18 +31,37 @@ public class TranslationService {
     public String translate(TranslationDTO translationDTO) {
         ExecutorService executorService = Executors.newFixedThreadPool(10);
 
-        String[] words = translationDTO.getTexts().split("\\s+");
+        Pattern pattern = Pattern.compile("[\\w']+|[.,!?;]");
+        Matcher matcher = pattern.matcher(translationDTO.getTexts());
+
+        List<String> tokens = new ArrayList<>();
         List<Future<String>> futures = new ArrayList<>();
 
-        for (String word : words) {
-            Callable<String> task = () -> translateWord(word, translationDTO);
-            futures.add(executorService.submit(task));
+        while (matcher.find()) {
+            tokens.add(matcher.group());
+        }
+
+        for (String token : tokens) {
+            if (token.matches("[\\w']+")) {
+                Callable<String> task = () -> translateWord(token, translationDTO);
+                futures.add(executorService.submit(task));
+            } else {
+                futures.add(CompletableFuture.completedFuture(token));
+            }
         }
 
         StringBuilder translatedText = new StringBuilder();
-        for (Future<String> future : futures) {
+        int sizeOfFutures = futures.size();
+        for (int i = 0; i < sizeOfFutures; i++) {
             try {
-                translatedText.append(future.get()).append(" ");
+                String translatedToken = futures.get(i).get();
+                translatedText.append(translatedToken);
+                if (isPunctuation(translatedToken)) {
+                    translatedText.append(" ");
+                }
+                else if (i < sizeOfFutures - 1 && !isPunctuation(tokens.get(i + 1))) {
+                    translatedText.append(" ");
+                }
             } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException("Error when translating a word: " + e.getMessage());
             }
@@ -48,6 +69,10 @@ public class TranslationService {
         executorService.shutdown();
 
         return translatedText.toString().trim();
+    }
+
+    private boolean isPunctuation(String token) {
+        return token.matches("[.,!?;]");
     }
 
     private String translateWord(String word, TranslationDTO translationDTO) {
