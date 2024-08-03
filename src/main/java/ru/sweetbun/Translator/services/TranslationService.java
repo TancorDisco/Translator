@@ -28,14 +28,16 @@ public class TranslationService {
     @Value("${yandex.translate.api-key}")
     private String apiKey;
     private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
     private final TranslationRequestDAO translationRequestDAO;
     private final Semaphore semaphore = new Semaphore(REQUEST_LIMIT_PER_SECOND);
     private final Object rateLimitLock = new Object();
     private int requestCount = 0;
 
     @Autowired
-    public TranslationService(RestTemplate restTemplate, TranslationRequestDAO translationRequestDAO) {
+    public TranslationService(RestTemplate restTemplate, ObjectMapper objectMapper, TranslationRequestDAO translationRequestDAO) {
         this.restTemplate = restTemplate;
+        this.objectMapper = objectMapper;
         this.translationRequestDAO = translationRequestDAO;
     }
 
@@ -137,7 +139,6 @@ public class TranslationService {
 
     private String extractTranslateWord(String responseBody) {
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
             JsonNode root = objectMapper.readTree(responseBody);
             return root.path("translations").get(0).path("text").asText();
         } catch (JsonProcessingException e) {

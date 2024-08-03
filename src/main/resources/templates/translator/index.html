@@ -9,19 +9,39 @@
 </head>
 <body>
 
-<div>
-    <form th:method="POST" th:action="@{/translator/translate}" th:object="${translation}">
-        <label for="sourceLanguageCode">Введите исходный язык: </label>
-        <input type="text" th:field="*{sourceLanguageCode}" id="sourceLanguageCode">
-        <br>
-        <label for="targetLanguageCode">Введите целевой язык перевода: </label>
-        <input type="text" th:field="*{targetLanguageCode}" id="targetLanguageCode">
-        <br>
-        <label for="texts">Введите сам текст: </label>
-        <input type="text" th:field="*{texts}" id="texts">
-        <br>
-
-        <input type="submit" value="Отправить">
+<div class="container mt-5">
+    <h3 class="mb-4">Перевод текста</h3>
+    <form th:method="POST" th:action="@{/translator}" th:object="${translation}">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="sourceLanguageCode" class="form-label">Исходный язык</label>
+                    <select class="form-select" th:field="*{sourceLanguageCode}" id="sourceLanguageCode">
+                        <option th:each="lang : ${languages}" th:value="${lang.code}" th:text="${lang.name}">
+                            Language</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="texts" class="form-label">Текст</label>
+                    <textarea class="form-control" th:field="*{texts}" id="texts" rows="5"
+                              placeholder="Введите текст для перевода"></textarea>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="targetLanguageCode" class="form-label">Целевой язык</label>
+                    <select class="form-select" th:field="*{targetLanguageCode}" id="targetLanguageCode">
+                        <option th:each="lang : ${languages}" th:value="${lang.code}" th:text="${lang.name}">
+                            Language</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Результат перевода</label>
+                    <div id="translatedText" class="border rounded p-3" th:text="${translatedText}"></div>
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Перевести</button>
     </form>
 </div>
 
