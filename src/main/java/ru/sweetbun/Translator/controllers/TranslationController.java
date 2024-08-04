@@ -24,8 +24,9 @@ public class TranslationController {
 
     @GetMapping()
     public String index(Model model) {
+
         model.addAttribute("languages", languagesService.getAllLangs());
-        model.addAttribute("translation", new TranslationDTO());
+        model.addAttribute("translation", translationService.getLangsOfLastTranslation());
         model.addAttribute("translatedText", "");
         return "translator/index";
     }

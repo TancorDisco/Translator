@@ -17,8 +17,8 @@
                 <div class="mb-3">
                     <label for="sourceLanguageCode" class="form-label">Исходный язык</label>
                     <select class="form-select" th:field="*{sourceLanguageCode}" id="sourceLanguageCode">
-                        <option th:each="lang : ${languages}" th:value="${lang.code}" th:text="${lang.name}">
-                            Language</option>
+                        <option th:each="lang : ${languages}" th:value="${lang.code}" th:text="${lang.name}"
+                                th:selected="${lang.code == translation.sourceLanguageCode}">Language</option>
                     </select>
                 </div>
                 <div class="mb-3">
@@ -31,8 +31,8 @@
                 <div class="mb-3">
                     <label for="targetLanguageCode" class="form-label">Целевой язык</label>
                     <select class="form-select" th:field="*{targetLanguageCode}" id="targetLanguageCode">
-                        <option th:each="lang : ${languages}" th:value="${lang.code}" th:text="${lang.name}">
-                            Language</option>
+                        <option th:each="lang : ${languages}" th:value="${lang.code}" th:text="${lang.name}"
+                                th:selected="${lang.code == translation.sourceLanguageCode}">Language</option>
                     </select>
                 </div>
                 <div class="mb-3">

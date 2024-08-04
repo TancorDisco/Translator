@@ -9,7 +9,11 @@ public class TranslationRequestDTO {
 
     private String ipAddress;
 
+    private String sourceLanguageCode;
+
     private String inputText;
+
+    private String targetLanguageCode;
 
     private String finalTranslatedText;
 }

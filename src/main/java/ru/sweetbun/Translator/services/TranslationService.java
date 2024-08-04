@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import ru.sweetbun.Translator.dao.TranslationRequestDAO;
+import ru.sweetbun.Translator.dao.TranslationsDAO;
 import ru.sweetbun.Translator.dto.TranslationDTO;
 import ru.sweetbun.Translator.dto.TranslationRequestDTO;
 
@@ -29,16 +29,16 @@ public class TranslationService {
     private String apiKey;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-    private final TranslationRequestDAO translationRequestDAO;
+    private final TranslationsDAO translationsDAO;
     private final Semaphore semaphore = new Semaphore(REQUEST_LIMIT_PER_SECOND);
     private final Object rateLimitLock = new Object();
     private int requestCount = 0;
 
     @Autowired
-    public TranslationService(RestTemplate restTemplate, ObjectMapper objectMapper, TranslationRequestDAO translationRequestDAO) {
+    public TranslationService(RestTemplate restTemplate, ObjectMapper objectMapper, TranslationsDAO translationsDAO) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
-        this.translationRequestDAO = translationRequestDAO;
+        this.translationsDAO = translationsDAO;
     }
 
     public String translate(TranslationDTO translationDTO, HttpServletRequest request) {
@@ -105,7 +105,8 @@ public class TranslationService {
 
         String finalTranslatedText = translatedText.toString().trim();
         String ipAddress = request.getRemoteAddr();
-        translationRequestDAO.save(new TranslationRequestDTO(ipAddress, translationDTO.getTexts(), finalTranslatedText));
+        translationsDAO.save(new TranslationRequestDTO(ipAddress, translationDTO.getSourceLanguageCode(),
+                translationDTO.getTexts(), translationDTO.getTargetLanguageCode(), finalTranslatedText));
 
         return finalTranslatedText;
     }
@@ -144,5 +145,9 @@ public class TranslationService {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Error parsing the JSON response: " + e.getMessage());
         }
+    }
+
+    public TranslationDTO getLangsOfLastTranslation() {
+        return translationsDAO.getLangsOfLastTranslation();
     }
 }
