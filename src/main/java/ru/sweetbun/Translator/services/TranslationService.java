@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 @Service
 public class TranslationService {
 
-    private static final int MAX_WORDS = 100;
+    public static final int MAX_WORDS = 200;
     private static final int REQUEST_LIMIT_PER_SECOND = 20;
     private static final int SLEEP_TIME_MS = 1100;
     @Value("${yandex.translate.api-key}")
@@ -58,7 +58,7 @@ public class TranslationService {
         }
 
         if (wordCount > MAX_WORDS) {
-            throw new IllegalArgumentException("The text contains more than " + MAX_WORDS + " words!");
+            throw new IllegalArgumentException("Текст содержит более " + MAX_WORDS + " слов!");
         }
 
         for (int i = 0; i < tokens.size(); i++) {
